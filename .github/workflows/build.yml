@@ -1,0 +1,58 @@
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - { name: linux-x64, os: ubuntu-latest }
+          - { name: darwin-x64, os: macos-latest }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Prepare GMP
+        run: |
+          wget https://gcc.gnu.org/pub/gcc/infrastructure/gmp-4.3.2.tar.bz2
+          tar xf gmp-4.3.2.tar.bz2
+
+      - name: Prepare MPFR
+        run: |
+          wget https://gcc.gnu.org/pub/gcc/infrastructure/mpfr-3.1.6.tar.bz2
+          tar xf mpfr-3.1.6.tar.bz2
+
+      - name: Prepare MPC
+        run: |
+          wget https://gcc.gnu.org/pub/gcc/infrastructure/mpc-0.8.1.tar.gz
+          tar xf mpc-0.8.1.tar.gz
+
+      - name: Configure
+        run: |
+          ./configure \
+            --target=nds32le-elf \
+            --disable-nls \
+            --enable-languages=c,c++ \
+            --enable-lto \
+            --with-gmp=${{ github.workspace }}/gmp-4.3.2 \
+            --with-mpfr=${{ github.workspace }}/mpfr-3.1.6 \
+            --with-mpc=${{ github.workspace }}/mpc-0.8.1 \
+            --with-arch=v3s \
+            --with-cpu=n10 \
+            --enable-default-relax=yes \
+            --enable-Os-default-ifc=yes \
+            --enable-Os-default-ex9=yes \
+            --with-nds32-lib=mculib \
+            --disable-werror \
+            --enable-multilib=yes \
+            --with-multilib-list=dsp,zol,graywolf \
+            --with-newlib \
+            --disable-shared \
+            --enable-threads=single \
+            --enable-checking=release
+
+      - name: Make
+        run: make
